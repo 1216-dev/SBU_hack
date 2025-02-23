@@ -4,11 +4,13 @@ import lime
 from lime import lime_tabular
 import pandas as pd
 import numpy as np
+import faiss
+import os
 import re
 
 loaded_model = joblib.load("logistic_regression_model.pkl")
 
-with open('unseen_data.json', 'r') as f:  # Replace with the actual file name
+with open('SBU_hack/backend _MLmodel/data.json', 'r') as f:  # Replace with the actual file name
     unseen_data = json.load(f)
 
 X_unseen = pd.DataFrame([unseen_data]) 
@@ -17,7 +19,7 @@ if 'target' in X_unseen.columns:
     X_unseen = X_unseen.drop(columns=['target'])
 
 y_pred = loaded_model.predict(X_unseen)
-print("Predicted Class:", y_pred[0])
+# print("Predicted Class:", y_pred[0])
 
 # Load LIME parameters
 with open("lime_explainer_params.json", "r") as f:
@@ -79,4 +81,42 @@ for feature, score in exp.as_list()[:5]:  # Taking first 5 features
     lime_dict[mapped_name] = [int(value), score]
 
 # Print the result
-print(json.dumps(lime_dict, indent=4))
+# print(json.dumps(lime_dict, indent=4))
+
+FAISS_INDEX_PATH = "SBU_hack/data/new_faiss.faiss"
+EXAMPLE_DATA_PATH = "SBU_hack/data/new_data.json"
+
+vector = np.array([item[0] for item in lime_dict.values()], dtype=np.float32).reshape(1, -1)
+
+# FAISS index creation
+dimension = vector.shape[1]  # Number of features
+index = faiss.IndexFlatL2(dimension)  # L2 distance index
+index.add(vector)  # Add vector to index 
+
+# Save FAISS index
+os.makedirs(os.path.dirname(FAISS_INDEX_PATH), exist_ok=True)
+faiss.write_index(index, FAISS_INDEX_PATH)
+
+# Save example data for fallback retrieval
+with open(EXAMPLE_DATA_PATH, "w", encoding="utf-8") as f:
+    json.dump(lime_dict, f, indent=4)
+
+
+def retrieve_user_data(vector_db, user_query, fallback_data_path=EXAMPLE_DATA_PATH):
+    if vector_db:
+        try:
+            user_vector = np.zeros((1, vector_db.d), dtype=np.float32)  # Dummy vector for searching
+            distances, indices = vector_db.search(user_vector, k=1)
+
+            if indices[0][0] != -1:
+                with open(fallback_data_path, "r", encoding="utf-8") as f:
+                    return json.load(f)  # Load example data
+        except AttributeError:
+            print("⚠ FAISS object not properly initialized. Using fallback data.")
+
+    with open(fallback_data_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+# Load FAISS index and test retrieval
+index_loaded = faiss.read_index(FAISS_INDEX_PATH)
+retrieved_data = retrieve_user_data(index_loaded, None)
