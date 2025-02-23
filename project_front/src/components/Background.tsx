@@ -67,13 +67,13 @@ export function Background() {
     const hearts: Array<{ x: number; y: number; size: number; speed: number; opacity: number }> = [];
     const pulses: Array<{ x: number; y: number; progress: number }> = [];
 
-    // Create initial hearts
+    // Create initial hearts with increased speed
     for (let i = 0; i < 15; i++) {
       hearts.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
         size: Math.random() * 20 + 10,
-        speed: Math.random() * 0.5 + 0.1,
+        speed: Math.random() * 1.5 + 0.8, // Increased speed range from (0.1-0.6) to (0.8-2.3)
         opacity: Math.random() * 0.5 + 0.1
       });
     }
@@ -103,6 +103,8 @@ export function Background() {
         if (heart.y + heart.size < 0) {
           heart.y = canvas.height + heart.size;
           heart.x = Math.random() * canvas.width;
+          // Randomize speed when heart resets
+          heart.speed = Math.random() * 1.5 + 0.8;
         }
         
         drawHeart(ctx, heart.x, heart.y, heart.size, isDark);

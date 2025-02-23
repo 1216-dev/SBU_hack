@@ -1,5 +1,0 @@
-faiss-cpu
-langchain
-langchain-community
-langchain-google-genai
-google-generativeai
