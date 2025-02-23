@@ -1,0 +1,1 @@
+{"texts": ["12345"], "metadatas": [{"data": "{\"user_id\": \"12345\", \"disease\": \"Diabetes\", \"top_5_features\": {\"High blood sugar\": [180, 0.8], \"Insulin resistance\": [75, 0.7], \"Obesity\": [30, 0.6], \"Family history\": [1, 0.5], \"Sedentary lifestyle\": [8, 0.4]}}"}]}
